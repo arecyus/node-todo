@@ -1,17 +1,18 @@
-var express = require("express");
-var bodyParser = require("body-parser");
-var {ObjectID} = require("mongodb");
-var {mongoose} = require("./db/mongoose.js");
-var {Todo}=require("./models/todo");
-var {User}=require("./models/user");
+const express = require("express");
+const bodyParser = require("body-parser");
+const {ObjectID} = require("mongodb");
+const {mongoose} = require("./db/mongoose.js");
+const {Todo}=require("./models/todo");
+const {User}=require("./models/user");
+const _= require("lodash");
 
-var app = express();
+const app = express();
 const port = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
-app.post("/todos",(req,res)=>{
+app.post("/todos",function(req,res){
     console.log(req.body);
-    var todo = new Todo({
+    let todo = new Todo({
         text: req.body.text,
         completed: req.body.completed,
         completedAt: req.body.completedAt
@@ -35,7 +36,7 @@ app.get("/todos",(req,res)=>{
 });
 
 app.get("/todos/:id",(req,res)=>{
-   var id= req.params.id;
+   let id= req.params.id;
    if(!ObjectID.isValid(id)) {
     return res.status(404).send();
 }
@@ -50,7 +51,7 @@ app.get("/todos/:id",(req,res)=>{
 });
 
 app.delete("/todos/:id",(req,res)=>{
-    var id = req.params.id;
+    let id = req.params.id;
     if(!ObjectID.isValid(id)){
         return res.status(404).send();
     }
@@ -64,6 +65,31 @@ app.delete("/todos/:id",(req,res)=>{
         res.status(400).send();
     });
 });
+
+
+app.patch("/todos/:id",(req,res)=>{
+   let id = req.params.id;
+   let body = _.pick(req.body, ["text","completed"]);
+    if(!ObjectID.isValid(id)){
+        return res.status(404).send();
+    }
+   if(_.isBoolean(body.completed) && body.completed) {
+        body.completedAt = new Date().getTime();
+    } else {
+        body.completed = false;
+        body.completedAt = null;
+    }
+
+    Todo.findByIdAndUpdate(id,{$set: body}, {new: true}).then((todo)=>{
+        if(!todo){
+            return res.status(404).send();
+        }
+        res.send({todo});
+    }).catch((e)=>{
+        req.status(400).send();
+    })
+});
+
 
 app.listen(port, ()=>{
     console.log("Arrancando en port: "+port);

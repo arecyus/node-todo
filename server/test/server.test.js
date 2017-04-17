@@ -11,7 +11,9 @@ const todos = [{
     text: "Primer test"
 },{
     _id:new ObjectID(),
-    text: "Segundo test"
+    text: "Segundo test",
+    completed: true,
+    completedAt: 333
 }];
 
 beforeEach((done)=>{
@@ -138,4 +140,43 @@ describe("DELETE /todos/:id", ()=>{
         .expect(404)
         .end(done);
     });
+});
+
+describe("PATCH /todos/:id", () =>{
+   it("Deberia updatear todo",(done)=>{
+       var hexId = todos[0]._id.toHexString();
+       var text = "Hola";
+       request(app)
+           .patch("/todos/"+hexId)
+           .send({
+               completed: true,
+               text
+           })
+           .expect(200)
+           .expect((res)=>{
+            expect(res.body.todo.text).toBe(text);
+            expect(res.body.todo.completed).toBe(true);
+            expect(res.body.todo.completedAt).toBeA("number");
+           })
+           .end(done);
+
+   });
+
+   it("Deberia vaciar completedAt cuando todo no esta completo",(done)=>{
+    var hexId = todos[1]._id.toHexString();
+    var text = "Cambiando";
+    request(app)
+        .patch("/todos/"+hexId)
+        .send({
+            completed:false,
+            text
+        })
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.todo.text).toBe(text);
+            expect(res.body.todo.completed).toBe(false);
+            expect(res.body.todo.completedAt).toNotExist();
+        })
+        .end(done);
+   });
 });

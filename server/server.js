@@ -1,5 +1,5 @@
 require("./config/config");
-const exress = require("express");
+const express = require("express");
 const bodyParser = require("body-parser");
 const {ObjectID} = require("mongodb");
 const {mongoose} = require("./db/mongoose.js");
@@ -26,7 +26,6 @@ app.post("/todos",function(req,res){
         res.status(400).send(err);
     });
 });
-
 
 app.get("/todos",(req,res)=>{
     Todo.find().then((todos)=>{
@@ -88,6 +87,22 @@ app.patch("/todos/:id",(req,res)=>{
         res.send({todo});
     }).catch((e)=>{
         req.status(400).send();
+    })
+});
+
+
+app.post("/users",(req,res)=>{
+    let body = _.pick(req.body, ["email","password"]);
+    let user = new User(body);
+
+
+
+    user.save().then(()=>{
+       return user.generateAuthToken();
+    }).then((token)=>{
+        res.header("x-auth",token).send(user);
+    }).catch((e)=>{
+        res.status(400).send(e);
     })
 });
 
